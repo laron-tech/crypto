@@ -19,7 +19,10 @@
 
 use std::{fmt, str::FromStr};
 
-use k256::ecdsa::{recoverable::Signature, SigningKey, VerifyingKey};
+use k256::{
+    ecdsa::{recoverable::Signature, SigningKey, VerifyingKey},
+    elliptic_curve::sec1::ToEncodedPoint,
+};
 
 use super::{error::Error, PrivateKey};
 
@@ -99,7 +102,8 @@ impl PublicKey {
     /// assert_eq!(uncompressed.len(), 65);
     /// ```
     pub fn to_bytes_uncompressed(&self) -> Vec<u8> {
-        self.0.to_bytes_uncompressed().to_vec()
+        let encode_point = self.0.to_encoded_point(false);
+        encode_point.as_bytes().to_vec()
     }
 
     /// Return the public key as a vector of bytes.
