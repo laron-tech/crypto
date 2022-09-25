@@ -1,0 +1,25 @@
+name: Rust
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Publish
+      run: |
+        cargo login ${{ secrets.CRATES_TOKEN }}
+        cargo publish
