@@ -17,16 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! # Keys
-//! This module contains the keys for the signing and verification of the
-//! messages.
+mod private_key;
+pub use private_key::*;
 
-mod error;
-mod private;
-mod public;
+mod public_key;
+pub use public_key::*;
 
-pub mod signer;
-
-pub use error::Error;
-pub use private::PrivateKey;
-pub use public::PublicKey;
+mod signature;
+pub use signature::Signature;

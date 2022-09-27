@@ -18,37 +18,19 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //! # Laron Crypto
-//! Laron Crypto is a library for signing and verifying messages using Secp256k1 elliptic curve
-//! algorithm.
+//! ![build](https://github.com/laron-tech/crypto/actions/workflows/rust.yml/badge.svg)
+//! [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+//! ![crates.io](https://img.shields.io/crates/v/laron-crypto.svg)
+//! [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flaron-tech%2Fcrypto.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Flaron-tech%2Fcrypto?ref=badge_small)
 //!
-//! This library is a wrapper for [k256](https://docs.rs/crate/k256/0.11.5) crate.
-//! This library also provides a simple way to generate a private key and a public key. and also a
-//! valid ethereum address.
-//!
-//! ## Example
-//! ```rust
-//! use laron_crypto::{keys::*, common::*};
-//!
-//! // Generate a new private key and a public key
-//! let sk = PrivateKey::new();
-//! let pk = sk.public();
-//!
-//! // Generate a valid ethereum address from the public key
-//! let addr = Address::from_public(&pk);
-//!
-//! // Sign a message
-//! let msg = b"Hello World!";
-//! let sig = sk.sign(msg);
-//! assert!(pk.verify(msg, &sig));
-//!
-//! // or use other way
-//! let sig = signer::sign(msg, &sk);
-//! assert!(signer::verify(msg, &sig, &pk));
-//!
-//! // Recover the public key from the signature
-//! let recovered_pk = signer::recover(msg, &sig).unwrap();
-//! assert_eq!(pk, recovered_pk);
-//! ```
+//! Laron Crypto is a library wrapper for the [k256](https://docs.rs/k256/latest/k256/) which
+//! simplifies the usage of the library and provides a more user-friendly API.
+//! The library is intended to be used for signing and verifying messages using
+//! the Elliptic Curve Digital Signature Algorithm (ECDSA).
+//! And also provides a simple API for generating a key pair for Ethereum account.
 
-pub mod common;
-pub mod keys;
+mod error;
+pub use error::*;
+
+mod keys;
+pub use keys::*;
