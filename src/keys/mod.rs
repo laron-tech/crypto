@@ -41,6 +41,7 @@
 //! use laron_crypto::PrivateKey;
 //!
 //! let private_key = PrivateKey::random();
+//! // create address
 //! let address = private_key.public_key().address();
 //! ```
 
