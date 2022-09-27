@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result};
+use crate::{Error, PublicKey, Result, Signature};
 use k256::ecdsa::signature::Signer;
 use rand::RngCore;
 
@@ -38,10 +38,13 @@ impl std::fmt::Display for PrivateKeyError {
     }
 }
 
+/// k256::PrivateKey and k256::ecdsa::SigningKey wrapper to provide simple way
+/// of generating private key and signing message.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrivateKey(k256::SecretKey);
 
 impl PrivateKey {
+    /// Generate new private key from random bytes.
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         let mut bytes = [0u8; SIZE];
@@ -49,28 +52,33 @@ impl PrivateKey {
         Self::from_bytes(&bytes).unwrap()
     }
 
+    /// Generate new private key from bytes and the bytes must be 32 bytes long.
     pub fn from_bytes(bytes: &[u8]) -> Result<PrivateKey> {
         let secret_key = k256::SecretKey::from_be_bytes(bytes)?;
         Ok(PrivateKey(secret_key))
     }
 
+    /// Return the bytes representation of the private key.
     pub fn to_bytes(&self) -> [u8; SIZE] {
         let mut bytes = [0u8; SIZE];
         bytes.copy_from_slice(&self.0.to_be_bytes());
         bytes
     }
 
-    pub fn sign(&self, message: &[u8]) -> Result<k256::ecdsa::recoverable::Signature> {
+    /// Sign the message using ethereum style.
+    pub fn sign(&self, message: &[u8]) -> Signature {
         let signing_key = k256::ecdsa::SigningKey::from(self.0.clone());
-        let signature = signing_key.sign(message);
-        Ok(signature)
+        let signature: k256::ecdsa::recoverable::Signature = signing_key.sign(message);
+        signature.into()
     }
 
+    /// Return the public key from the private key.
     pub fn public_key(&self) -> PublicKey {
         let public_key = self.0.public_key();
         PublicKey::from(public_key)
     }
 
+    /// Derive the child private key from the parent private key.
     pub fn derive_child(&self, other: [u8; SIZE]) -> Result<PrivateKey> {
         let child_scalar =
             Option::<k256::NonZeroScalar>::from(k256::NonZeroScalar::from_repr(other.into()))
@@ -89,9 +97,21 @@ impl From<k256::SecretKey> for PrivateKey {
     }
 }
 
+impl From<&k256::SecretKey> for PrivateKey {
+    fn from(secret_key: &k256::SecretKey) -> Self {
+        PrivateKey(secret_key.clone())
+    }
+}
+
 impl From<PrivateKey> for k256::SecretKey {
     fn from(private_key: PrivateKey) -> Self {
         private_key.0
+    }
+}
+
+impl From<&PrivateKey> for k256::SecretKey {
+    fn from(private_key: &PrivateKey) -> Self {
+        private_key.0.clone()
     }
 }
 
@@ -102,9 +122,22 @@ impl From<k256::ecdsa::SigningKey> for PrivateKey {
     }
 }
 
+impl From<&k256::ecdsa::SigningKey> for PrivateKey {
+    fn from(signing_key: &k256::ecdsa::SigningKey) -> Self {
+        let sk: k256::SecretKey = signing_key.clone().into();
+        PrivateKey(sk)
+    }
+}
+
 impl From<PrivateKey> for k256::ecdsa::SigningKey {
     fn from(private_key: PrivateKey) -> Self {
         k256::ecdsa::SigningKey::from(private_key.0)
+    }
+}
+
+impl From<&PrivateKey> for k256::ecdsa::SigningKey {
+    fn from(private_key: &PrivateKey) -> Self {
+        k256::ecdsa::SigningKey::from(private_key.0.clone())
     }
 }
 
@@ -120,10 +153,18 @@ impl From<PrivateKey> for [u8; SIZE] {
     }
 }
 
+impl From<&PrivateKey> for [u8; SIZE] {
+    fn from(private_key: &PrivateKey) -> Self {
+        private_key.to_bytes()
+    }
+}
+
 impl std::str::FromStr for PrivateKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
+        let s = s.trim_start_matches("0x");
+
         let bytes = hex::decode(s)?;
         if bytes.len() != SIZE {
             return Err(PrivateKeyError::InvalidKey.into());
@@ -137,5 +178,19 @@ impl std::str::FromStr for PrivateKey {
 impl std::fmt::Display for PrivateKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", hex::encode(self.to_bytes()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_private_key() {
+        let private_key = PrivateKey::random();
+        let public_key = private_key.public_key();
+        let message = b"hello world";
+        let signature = private_key.sign(message);
+        assert!(public_key.verify(message, &signature).is_ok());
     }
 }

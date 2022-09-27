@@ -19,8 +19,10 @@
 
 use crate::{PrivateKeyError, PublicKeyError};
 
+/// Result type for the crate.
 pub type Result<T> = core::result::Result<T, Error>;
 
+/// Error representing the possible errors that can occur when using the crate.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
     v: String,
@@ -71,5 +73,16 @@ impl From<PrivateKeyError> for Error {
 impl From<PublicKeyError> for Error {
     fn from(err: PublicKeyError) -> Self {
         Error { v: err.to_string() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error() {
+        let err = Error::from("test");
+        assert_eq!(err.to_string(), "test");
     }
 }

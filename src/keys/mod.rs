@@ -17,6 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+//! This module contains the public and private key types.
+//!
+//! The public key is used to verify signatures, while the private key is used to
+//! sign messages.
+//!
+//! # Example
+//! ```rust
+//! use laron_crypto::{PrivateKey, PublicKey};
+//!
+//! let private_key = PrivateKey::random();
+//! let public_key = PublicKey::from(&private_key);
+//!
+//! let message = b"Hello, world!";
+//! let signature = private_key.sign(message);
+//! assert!(public_key.verify(message, &signature).is_ok());
+//! ```
+//!
+//! It is also can be used for ethereum address generation.
+//!
+//! # Example
+//! ```rust
+//! use laron_crypto::PrivateKey;
+//!
+//! let private_key = PrivateKey::random();
+//! let address = private_key.public_key().address();
+//! ```
+
 mod private_key;
 pub use private_key::*;
 
