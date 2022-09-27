@@ -17,107 +17,52 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{fmt, str::FromStr};
+use crate::{Error, PublicKey, Result};
+use std::str::FromStr;
+use tiny_keccak::{Hasher, Keccak};
 
-use tiny_keccak::Hasher;
+const SIZE: usize = 20;
 
-use crate::keys::PublicKey;
+/// Address represents 20 bytes of ethereum address.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Address([u8; SIZE]);
 
-use super::Error;
-
-#[derive(Clone, PartialEq, Eq)]
-pub struct Address([u8; 20]);
-
-/// # Address
-/// This struct contains the address of the public key.
-/// ## Example
-/// ```rust
-/// use laron_crypto::common::Address;
-/// use laron_crypto::keys::PublicKey;
-/// use laron_crypto::keys::PrivateKey;
-///
-/// let private_key = PrivateKey::new();
-/// let public_key = PublicKey::from_private(&private_key);
-/// let address = Address::from_public(&public_key);
-/// ```
 impl Address {
-    /// Create address from fixed bytes.
-    /// is not valid.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// let address_from_bytes = Address::new(address.to_bytes());
-    /// assert_eq!(address, address_from_bytes);
-    /// ```
-    pub fn new(addr: [u8; 20]) -> Self {
-        Address(addr)
+    /// Create a new address from a the given bytes.
+    pub fn new(bytes: [u8; SIZE]) -> Self {
+        Address(bytes)
     }
 
-    /// Create address from slice of bytes.
-    /// This function will return an error if the slice of bytes is not valid.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// let address_from_bytes = Address::from_slice(&address.to_bytes()).unwrap();
-    /// assert_eq!(address, address_from_bytes);
-    /// ```
-    pub fn from_slice(addr: &[u8]) -> Result<Self, Error> {
-        if addr.len() != 20 {
-            return Err(Error::InvalidAddress);
+    /// Create a new address from a bytes slice.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != SIZE {
+            return Err("Address: invalid length".into());
         }
-        let mut a = [0u8; 20];
-        a.copy_from_slice(addr);
-        Ok(Address(a))
+
+        let mut address = [0u8; SIZE];
+        address.copy_from_slice(bytes);
+        Ok(Address(address))
     }
 
-    /// Create address from public key.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// ```
-    pub fn from_public(pubkey: &PublicKey) -> Self {
-        let pk_bytes = pubkey.to_bytes_uncompressed();
+    /// Create a new address from public key.
+    pub fn from_public_key(public_key: &PublicKey) -> Address {
+        let bytes = public_key.to_uncompressed_bytes();
         let mut buf = [0u8; 32];
-        let mut hasher = tiny_keccak::Keccak::v256();
-        hasher.update(&pk_bytes[1..]);
-        hasher.finalize(&mut buf);
+        let mut keccak = Keccak::v256();
+        keccak.update(&bytes[1..]);
+        keccak.finalize(&mut buf);
 
-        let mut addr = [0u8; 20];
-        addr.copy_from_slice(&buf[12..]);
-
-        Address(addr)
+        let mut address = [0u8; SIZE];
+        address.copy_from_slice(&buf[12..]);
+        Address(address)
     }
 
-    /// Convert address into checksummed hex string.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// let address_hex = address.to_hex();
-    /// ```
+    /// Return the address as bytes.
+    pub fn to_bytes(&self) -> [u8; SIZE] {
+        self.0
+    }
+
+    /// Return the address as checksummed string.
     pub fn to_hex(&self) -> String {
         let hex_addr = hex::encode(&self.0);
         let mut hasher = tiny_keccak::Keccak::v256();
@@ -139,77 +84,35 @@ impl Address {
                 x
             })
     }
+}
 
-    /// Return address as str.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// let address_str = address.as_str();
-    /// ```
-    pub fn as_str(&self) -> &'static str {
-        let string = self.to_hex();
-        Box::leak(string.into_boxed_str())
-    }
-
-    /// Return address as bytes fixed bytes.
-    /// ## Example
-    /// ```rust
-    /// use laron_crypto::common::Address;
-    /// use laron_crypto::keys::PublicKey;
-    /// use laron_crypto::keys::PrivateKey;
-    ///
-    /// let private_key = PrivateKey::new();
-    /// let public_key = PublicKey::from_private(&private_key);
-    /// let address = Address::from_public(&public_key);
-    /// let address_bytes = address.to_bytes();
-    /// ```
-    pub fn to_bytes(&self) -> [u8; 20] {
-        self.0
+impl From<[u8; SIZE]> for Address {
+    fn from(bytes: [u8; SIZE]) -> Self {
+        Address(bytes)
     }
 }
 
-impl fmt::Display for Address {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_hex())
-    }
-}
-
-impl fmt::Debug for Address {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", hex::encode(&self.0))
-    }
-}
-
-impl fmt::UpperHex for Address {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", hex::encode_upper(&self.0))
-    }
-}
-
-impl fmt::LowerHex for Address {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", hex::encode(&self.0))
-    }
-}
-
-impl From<[u8; 20]> for Address {
-    fn from(addr: [u8; 20]) -> Self {
-        Address(addr)
+impl From<Address> for [u8; SIZE] {
+    fn from(address: Address) -> Self {
+        address.0
     }
 }
 
 impl FromStr for Address {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let s = s.trim_start_matches("0x");
-        let addr = hex::decode(s).map_err(|_| Error::InvalidAddress)?;
-        Address::from_slice(&addr)
+
+        let bytes = hex::decode(s)?;
+        let mut address = [0u8; SIZE];
+        address.copy_from_slice(&bytes);
+        Ok(Address(address))
+    }
+}
+
+impl std::fmt::Display for Address {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_hex())
     }
 }

@@ -18,9 +18,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //! Common module for laron-crypto
+//!
+//! This module contains common functions and structs that are used in the
+//! laron-crypto library.
 
 mod address;
-mod error;
-
-pub use self::address::Address;
-pub use self::error::Error;
+pub use address::*;
