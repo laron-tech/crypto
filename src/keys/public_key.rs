@@ -46,9 +46,9 @@ pub struct PublicKey(k256::PublicKey);
 
 impl PublicKey {
     /// Create new public key from byte slice.
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let pk = k256::PublicKey::from_sec1_bytes(bytes)?;
-        Ok(PublicKey(pk))
+        Ok(Self(pk))
     }
 
     /// Return the public key as a compressed byte slice.
@@ -79,26 +79,26 @@ impl PublicKey {
     }
 
     /// Derive child public key from parent key.
-    pub fn derive_child(&self, other: [u8; 32]) -> Result<PublicKey> {
+    pub fn derive_child(&self, other: [u8; 32]) -> Result<Self> {
         let child_scalar =
             Option::<k256::NonZeroScalar>::from(k256::NonZeroScalar::from_repr(other.into()))
                 .ok_or(PublicKeyError::InvalidKey)?;
         let child_point = self.0.to_projective() + (k256::AffinePoint::generator() * *child_scalar);
         let derived = k256::PublicKey::from_affine(child_point.into())
             .map_err(|_| PublicKeyError::ErrorCrypto)?;
-        Ok(PublicKey(derived))
+        Ok(Self(derived))
     }
 }
 
 impl From<k256::PublicKey> for PublicKey {
     fn from(key: k256::PublicKey) -> Self {
-        PublicKey(key)
+        Self(key)
     }
 }
 
 impl From<&k256::PublicKey> for PublicKey {
     fn from(key: &k256::PublicKey) -> Self {
-        PublicKey(*key)
+        Self(*key)
     }
 }
 
@@ -116,13 +116,13 @@ impl From<&PublicKey> for k256::PublicKey {
 
 impl From<k256::ecdsa::VerifyingKey> for PublicKey {
     fn from(key: k256::ecdsa::VerifyingKey) -> Self {
-        PublicKey(key.into())
+        Self(key.into())
     }
 }
 
 impl From<&k256::ecdsa::VerifyingKey> for PublicKey {
     fn from(key: &k256::ecdsa::VerifyingKey) -> Self {
-        PublicKey(key.into())
+        Self(key.into())
     }
 }
 
@@ -140,13 +140,13 @@ impl From<&PublicKey> for k256::ecdsa::VerifyingKey {
 
 impl From<[u8; SIZE]> for PublicKey {
     fn from(bytes: [u8; SIZE]) -> Self {
-        PublicKey::from_bytes(&bytes).unwrap()
+        Self::from_bytes(&bytes).unwrap()
     }
 }
 
 impl From<&[u8; SIZE]> for PublicKey {
     fn from(bytes: &[u8; SIZE]) -> Self {
-        PublicKey::from_bytes(bytes).unwrap()
+        Self::from_bytes(bytes).unwrap()
     }
 }
 
@@ -181,7 +181,7 @@ impl FromStr for PublicKey {
         let s = s.trim_start_matches("0x");
 
         let bytes = hex::decode(s)?;
-        PublicKey::from_bytes(&bytes)
+        Self::from_bytes(&bytes)
     }
 }
 
