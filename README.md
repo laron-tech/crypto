@@ -10,5 +10,3 @@ simplifies the usage of the library and provides a more user-friendly API.
 The library is intended to be used for signing and verifying messages using
 the Elliptic Curve Digital Signature Algorithm (ECDSA).
 And also provides a simple API for generating a key pair for Ethereum account.
-
-License: GPL-3.0-or-later
