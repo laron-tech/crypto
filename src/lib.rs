@@ -28,9 +28,6 @@
 //! the Elliptic Curve Digital Signature Algorithm (ECDSA).
 //! And also provides a simple API for generating a key pair for Ethereum account.
 
-mod error;
-pub use error::*;
-
 mod keys;
 pub use keys::*;
 

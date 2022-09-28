@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result};
+use crate::PublicKey;
+use horror::{Result, Error};
 use std::str::FromStr;
 
 const SIZE: usize = 65;
@@ -28,13 +29,13 @@ pub struct Signature(k256::ecdsa::recoverable::Signature);
 
 impl Signature {
     /// Create a new signature instance from a byte array.
-    pub fn from_bytes(bytes: &[u8]) -> Result<Signature> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != SIZE {
-            return Err("invalid signature length".into());
+            return Err(Error::new("invalid signature length"));
         }
 
         let sig = k256::ecdsa::recoverable::Signature::try_from(bytes)?;
-        Ok(Signature(sig))
+        Ok(Self(sig))
     }
 
     /// Return the signature as a byte array.
@@ -48,7 +49,7 @@ impl Signature {
     pub fn verify(&self, msg: &[u8], public_key: &PublicKey) -> Result<bool> {
         let verifying_key: PublicKey = self.0.recover_verifying_key(msg)?.into();
         if verifying_key != *public_key {
-            return Err("invalid signature".into());
+            return Err(Error::new("invalid signature"));
         }
         Ok(true)
     }
@@ -62,13 +63,13 @@ impl Signature {
 
 impl From<k256::ecdsa::recoverable::Signature> for Signature {
     fn from(sig: k256::ecdsa::recoverable::Signature) -> Self {
-        Signature(sig)
+        Self(sig)
     }
 }
 
 impl From<&k256::ecdsa::recoverable::Signature> for Signature {
     fn from(sig: &k256::ecdsa::recoverable::Signature) -> Self {
-        Signature(*sig)
+        Self(*sig)
     }
 }
 
@@ -98,13 +99,13 @@ impl From<&Signature> for [u8; SIZE] {
 
 impl From<[u8; SIZE]> for Signature {
     fn from(bytes: [u8; SIZE]) -> Self {
-        Signature::from_bytes(&bytes).unwrap()
+        Self::from_bytes(&bytes).unwrap()
     }
 }
 
 impl From<&[u8; SIZE]> for Signature {
     fn from(bytes: &[u8; SIZE]) -> Self {
-        Signature::from_bytes(bytes).unwrap()
+        Self::from_bytes(bytes).unwrap()
     }
 }
 
@@ -113,7 +114,7 @@ impl FromStr for Signature {
 
     fn from_str(s: &str) -> Result<Self> {
         let bytes = hex::decode(s)?;
-        Signature::from_bytes(&bytes)
+        Self::from_bytes(&bytes)
     }
 }
 

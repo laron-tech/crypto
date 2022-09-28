@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result};
+use crate::PublicKey;
+use horror::{Result, Error};
 use std::str::FromStr;
 use tiny_keccak::{Hasher, Keccak};
 
@@ -30,22 +31,22 @@ pub struct Address([u8; SIZE]);
 impl Address {
     /// Create a new address from a the given bytes.
     pub fn new(bytes: [u8; SIZE]) -> Self {
-        Address(bytes)
+        Self(bytes)
     }
 
     /// Create a new address from a bytes slice.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != SIZE {
-            return Err("Address: invalid length".into());
+            return Err(Error::new("Address: invalid length"));
         }
 
         let mut address = [0u8; SIZE];
         address.copy_from_slice(bytes);
-        Ok(Address(address))
+        Ok(Self(address))
     }
 
     /// Create a new address from public key.
-    pub fn from_public_key(public_key: &PublicKey) -> Address {
+    pub fn from_public_key(public_key: &PublicKey) -> Self {
         let bytes = public_key.to_uncompressed_bytes();
         let mut buf = [0u8; 32];
         let mut keccak = Keccak::v256();
@@ -54,7 +55,7 @@ impl Address {
 
         let mut address = [0u8; SIZE];
         address.copy_from_slice(&buf[12..]);
-        Address(address)
+        Self(address)
     }
 
     /// Return the address as bytes.
@@ -88,7 +89,7 @@ impl Address {
 
 impl From<[u8; SIZE]> for Address {
     fn from(bytes: [u8; SIZE]) -> Self {
-        Address(bytes)
+        Self(bytes)
     }
 }
 
@@ -107,7 +108,7 @@ impl FromStr for Address {
         let bytes = hex::decode(s)?;
         let mut address = [0u8; SIZE];
         address.copy_from_slice(&bytes);
-        Ok(Address(address))
+        Ok(Self(address))
     }
 }
 

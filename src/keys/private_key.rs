@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result, Signature};
+use crate::{PublicKey, Signature};
+use horror::{Result, Error};
 use k256::ecdsa::signature::Signer;
 use rand::RngCore;
 
@@ -38,6 +39,8 @@ impl std::fmt::Display for PrivateKeyError {
     }
 }
 
+impl std::error::Error for PrivateKeyError {}
+
 /// k256::PrivateKey and k256::ecdsa::SigningKey wrapper to provide simple way
 /// of generating private key and signing message.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,9 +56,9 @@ impl PrivateKey {
     }
 
     /// Generate new private key from bytes and the bytes must be 32 bytes long.
-    pub fn from_bytes(bytes: &[u8]) -> Result<PrivateKey> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let secret_key = k256::SecretKey::from_be_bytes(bytes)?;
-        Ok(PrivateKey(secret_key))
+        Ok(Self(secret_key))
     }
 
     /// Return the bytes representation of the private key.
@@ -79,7 +82,7 @@ impl PrivateKey {
     }
 
     /// Derive the child private key from the parent private key.
-    pub fn derive_child(&self, other: [u8; SIZE]) -> Result<PrivateKey> {
+    pub fn derive_child(&self, other: [u8; SIZE]) -> Result<Self> {
         let child_scalar =
             Option::<k256::NonZeroScalar>::from(k256::NonZeroScalar::from_repr(other.into()))
                 .ok_or(PrivateKeyError::ErrorCrypto)?;
@@ -93,13 +96,13 @@ impl PrivateKey {
 
 impl From<k256::SecretKey> for PrivateKey {
     fn from(secret_key: k256::SecretKey) -> Self {
-        PrivateKey(secret_key)
+        Self(secret_key)
     }
 }
 
 impl From<&k256::SecretKey> for PrivateKey {
     fn from(secret_key: &k256::SecretKey) -> Self {
-        PrivateKey(secret_key.clone())
+        Self(secret_key.clone())
     }
 }
 
@@ -125,7 +128,7 @@ impl From<k256::ecdsa::SigningKey> for PrivateKey {
 impl From<&k256::ecdsa::SigningKey> for PrivateKey {
     fn from(signing_key: &k256::ecdsa::SigningKey) -> Self {
         let sk: k256::SecretKey = signing_key.clone().into();
-        PrivateKey(sk)
+        Self(sk)
     }
 }
 
@@ -143,7 +146,7 @@ impl From<&PrivateKey> for k256::ecdsa::SigningKey {
 
 impl From<[u8; SIZE]> for PrivateKey {
     fn from(bytes: [u8; SIZE]) -> Self {
-        PrivateKey::from_bytes(&bytes).unwrap()
+        Self::from_bytes(&bytes).unwrap()
     }
 }
 
@@ -171,7 +174,7 @@ impl std::str::FromStr for PrivateKey {
         }
         let mut array = [0u8; SIZE];
         array.copy_from_slice(&bytes);
-        Ok(PrivateKey::from(array))
+        Ok(Self::from(array))
     }
 }
 
