@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result, Signature};
+use crate::{PublicKey, Signature};
+use horror::{Result, Error};
 use k256::ecdsa::signature::Signer;
 use rand::RngCore;
 
@@ -37,6 +38,8 @@ impl std::fmt::Display for PrivateKeyError {
         }
     }
 }
+
+impl std::error::Error for PrivateKeyError {}
 
 /// k256::PrivateKey and k256::ecdsa::SigningKey wrapper to provide simple way
 /// of generating private key and signing message.

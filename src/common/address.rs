@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result};
+use crate::PublicKey;
+use horror::{Result, Error};
 use std::str::FromStr;
 use tiny_keccak::{Hasher, Keccak};
 
@@ -36,7 +37,7 @@ impl Address {
     /// Create a new address from a bytes slice.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != SIZE {
-            return Err("Address: invalid length".into());
+            return Err(Error::new("Address: invalid length"));
         }
 
         let mut address = [0u8; SIZE];

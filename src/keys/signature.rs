@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Error, PublicKey, Result};
+use crate::PublicKey;
+use horror::{Result, Error};
 use std::str::FromStr;
 
 const SIZE: usize = 65;
@@ -30,7 +31,7 @@ impl Signature {
     /// Create a new signature instance from a byte array.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != SIZE {
-            return Err("invalid signature length".into());
+            return Err(Error::new("invalid signature length"));
         }
 
         let sig = k256::ecdsa::recoverable::Signature::try_from(bytes)?;
@@ -48,7 +49,7 @@ impl Signature {
     pub fn verify(&self, msg: &[u8], public_key: &PublicKey) -> Result<bool> {
         let verifying_key: PublicKey = self.0.recover_verifying_key(msg)?.into();
         if verifying_key != *public_key {
-            return Err("invalid signature".into());
+            return Err(Error::new("invalid signature"));
         }
         Ok(true)
     }

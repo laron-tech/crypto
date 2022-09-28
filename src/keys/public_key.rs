@@ -17,7 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{Address, Error, PrivateKey, Result, Signature};
+use crate::{Address, PrivateKey, Signature};
+use horror::{Result, Error};
 use k256::elliptic_curve::{group::prime::PrimeCurveAffine, sec1::ToEncodedPoint};
 use std::str::FromStr;
 
@@ -38,6 +39,8 @@ impl std::fmt::Display for PublicKeyError {
         }
     }
 }
+
+impl std::error::Error for PublicKeyError {}
 
 /// k256::PublicKey and k256::ecdsa::VerifyingKsy wrapper to provide simple way
 /// of generating ethereum address and verifying message.
